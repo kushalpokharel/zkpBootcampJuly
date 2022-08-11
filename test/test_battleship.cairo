@@ -216,7 +216,7 @@ func test_bombard_move1{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_
     load_hashes(        
         idx = 0, 
         game_idx = 0, 
-        hashes_len = 3, 
+        hashes_len = 2, 
         hashes = array, 
         player = Player_1, 
         x = 0, 
@@ -234,7 +234,7 @@ func test_bombard_move1{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_
 
     ## State after being shot
     let (s2) = grid.read(0, Player_1, 0, 0)
-    local state_after = s2.shot    
+    local state_after = s2.shot      
 
     ## State at field (0,0) 0 before being shot and 1 after being shot
     assert 0 = state_before
@@ -274,7 +274,7 @@ func test_bombard_move2{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_
     load_hashes(        
         idx = 0, 
         game_idx = 0, 
-        hashes_len = 4, 
+        hashes_len = 3, 
         hashes = array, 
         player = Player_1, 
         x = 0, 
@@ -285,7 +285,7 @@ func test_bombard_move2{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_
     load_hashes(        
         idx = 0, 
         game_idx = 0, 
-        hashes_len = 4, 
+        hashes_len = 3, 
         hashes = array, 
         player = Player_2, 
         x = 0, 
@@ -320,7 +320,9 @@ func test_bombard_move2{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_
 
     ## Retrieve scores
     let (game) = games.read(0)
-
+    %{
+        print(ids.game.player1.address)
+    %}
     ## Assert player 1 has 0
     assert 0 = game.player1.address
 
