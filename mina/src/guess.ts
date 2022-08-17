@@ -14,23 +14,21 @@ import {
 export class Guess extends SmartContract {
   @state(Field) hashOfGuess = State<Field>();
   @state(PublicKey as any) ownerAddr = State<PublicKey>();
-  @state(UInt64) pot = State<UInt64>();
+  @state(Field) pot = State<Field>();
 
   @method init(initialbalance: UInt64, ownerAddr: PublicKey, potValue: Field) {
     this.ownerAddr.set(ownerAddr);
     this.balance.addInPlace(initialbalance);
-    this.pot.set(new UInt64(potValue));
+    this.pot.set(potValue);
   }
 
   @method startRound(numberToGuess: Field, callerPrivKey: PrivateKey) {
-    let ownerAddr = this.ownerAddr.get();
-    let callerAddr = callerPrivKey.toPublicKey();
-    let potValue = this.pot.get();
+    const ownerAddr = this.ownerAddr.get();
+    const callerAddr = callerPrivKey.toPublicKey();
+    const potValue = this.pot.get();
     callerAddr.assertEquals(ownerAddr);
-    this.balance.addInPlace(potValue);
-    this.hashOfGuess.set(
-      Poseidon.hash([numberToGuess.add(potValue.toString())])
-    );
+    this.balance.addInPlace(new UInt64(potValue));
+    this.hashOfGuess.set(Poseidon.hash([numberToGuess.add(potValue)]));
   }
   // //another way to do access control
   @method startRoundWithSig(x: Field, signature: Signature, guess: Field) {
@@ -41,7 +39,7 @@ export class Guess extends SmartContract {
 
   @method submitGuess(guess: Field) {
     let potValue = this.pot.get();
-    let userHash = Poseidon.hash([guess.add(potValue.toString())]);
+    let userHash = Poseidon.hash([guess.add(potValue)]);
     let stateHash = this.hashOfGuess.get();
     stateHash.assertEquals(userHash);
   }
@@ -49,9 +47,9 @@ export class Guess extends SmartContract {
   @method guessMultiplied(guess: Field, result: Field) {
     let potValue = this.pot.get();
     const onChainHash = this.hashOfGuess.get();
-    onChainHash.assertEquals(Poseidon.hash([guess.add(potValue.toString())]));
+    onChainHash.assertEquals(Poseidon.hash([guess.add(potValue)]));
     let multiplied = Field(guess).mul(2);
     multiplied.assertEquals(result);
-    this.balance.subInPlace(potValue);
+    this.balance.subInPlace(new UInt64(potValue));
   }
 }

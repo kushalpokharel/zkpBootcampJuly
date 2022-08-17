@@ -168,12 +168,6 @@ func test_add_squares{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_ch
     assert array[17] = 17
     assert array[18] = 18
 
-    ## Reverts if player3 tries laoding anything
-    %{stop_prank_callable = start_prank(ids.Player_3)%}   
-    %{ expect_revert() %}
-    add_squares(0, 0, 18, array, Player_1, 0, 0)    
-    %{ stop_prank_callable() %}   
-
     %{stop_prank_callable = start_prank(ids.Player_1)%}   
     add_squares(0, 0, 18, array, Player_1, 0, 0)
     %{ stop_prank_callable() %}      
@@ -194,12 +188,17 @@ func test_add_squares{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_ch
     let (s) = grid.read(0, Player_1, 4, 1)
     assert s.square_commit = 9        
 
+    ## Reverts if player3 tries laoding anything
+    %{stop_prank_callable = start_prank(ids.Player_3)%}   
+    %{ expect_revert() %}
+    add_squares(0, 0, 18, array, Player_1, 0, 0)    
+    %{ stop_prank_callable() %}   
+
     return ()
 end
 
 
 ## Test fire at move 0
-
 @external
 func test_bombard_move1{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*}():    
 
@@ -252,23 +251,26 @@ func test_bombard_move2{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_
     set_up_game(player1 = Player_1, player2 = Player_2)    
 
     ## Hash a number
-    let (hashed_1) = hash_numb(666)
-    let (hashed_2) = hash_numb(3243241)
-    let (hashed_3) = hash_numb(6632426)
-    let (hashed_4) = hash_numb(32320)
+    let (hashed_1) = hash_numb(666) ## No ship
+    let (hashed_2) = hash_numb(3243241) ## Ship
+    let (hashed_3) = hash_numb(6632426)## No ship
+    let (hashed_4) = hash_numb(32320)## No ship
 
     %{
         from starkware.cairo.common.hash_state import compute_hash_on_elements
         hash = compute_hash_on_elements([666])
-        print(f"hash python: ", hash)
-        print(f"hash cairo: ", ids.hashed_1)
+        print(f"hash python: ", hash)        
+        print(f"hash1: ", ids.hashed_1)
+        print(f"hash2: ", ids.hashed_2)
+        print(f"hash3: ", ids.hashed_3)
+        print(f"hash3: ", ids.hashed_4)
     %}  
 
     let (local array : felt*) = alloc()
-    assert array[0] = hashed_1
-    assert array[1] = hashed_2
-    assert array[2] = hashed_3
-    assert array[3] = hashed_4    
+    assert array[0] = hashed_1 ## No ship
+    assert array[1] = hashed_2 ## Ship
+    assert array[2] = hashed_3 ## No ship
+    assert array[3] = hashed_4 ## No ship
 
     ## Load hashes as player 1
     load_hashes(        
@@ -292,31 +294,20 @@ func test_bombard_move2{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_
         y = 0
     )
             
-    ## Start move 1 as player1
+    ## Start move 1 as player1, hits empty spot
     %{stop_prank_callable = start_prank(ids.Player_1)%}   
     bombard(0, 0, 0, 0)
-    %{ stop_prank_callable() %}      
+    %{ stop_prank_callable() %}        
 
-    ## Reverts if player1 tries playing again
-    %{ expect_revert() %}
-    bombard(0, 4, 0, 0)
-    %{ stop_prank_callable() %}   
-
-    ## Reverts with wrong hash
-    %{stop_prank_callable = start_prank(ids.Player_2)%} 
-    %{ expect_revert() %}
-    bombard(0, 1, 0, 664)
-    %{ stop_prank_callable() %}   
-
-    ## Move 2 as player2
+    ## Move 2 as player2, hits a ship
     %{stop_prank_callable = start_prank(ids.Player_2)%}   
     bombard(0, 1, 0, 666)
     %{ stop_prank_callable() %}          
 
-    ## Move 3 as player1
+    ## Move 3 as player1, hits empty spot
     %{stop_prank_callable = start_prank(ids.Player_1)%}   
     bombard(0, 2, 0, 3243241)
-    %{ stop_prank_callable() %}  
+    %{ stop_prank_callable() %}      
 
     ## Retrieve scores
     let (game) = games.read(0)
@@ -324,10 +315,19 @@ func test_bombard_move2{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_
         print(ids.game.player1.address)
     %}
     ## Assert player 1 has 0
-    assert 0 = game.player1.address
+    assert 0 = game.player1.points    
 
     ## Assert player 2 has 1
-    assert 1 = game.player2.address
+    assert 1 = game.player2.points    
+
+    ## Assert no winner
+    assert 0 = game.winner    
+
+    ## Reverts with wrong hash
+    %{stop_prank_callable = start_prank(ids.Player_2)%}     
+    %{ expect_revert() %}
+    bombard(0, 1, 0, 664)
+    %{ stop_prank_callable() %}       
     
     return()
 end

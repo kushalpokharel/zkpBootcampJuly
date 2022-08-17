@@ -122,6 +122,10 @@ It will check whether the caller is one of the players and whether it is their m
 
 Then it will check whether this is the very first move and whether it needs to process the `square_reveal` argument, if it is not first move it will assert that is the right player and call `check_hit`. If the player has accumulated four points, they are declared a winner.
 
+Square will be loaded twice using `grid.read()`:
+- to confirm provided reveal matches square bombed by the opposing player in the prior move (using x/y cords from `game.last_move`)
+- to set square marked as hit by the current caller (using x/y cords provided as arguments)
+
 If hit has been made, score for the previous player will be incremented.
 
 The next player will be set to the opposite player depending on what current caller is.
@@ -129,9 +133,89 @@ The next player will be set to the opposite player depending on what current cal
 The game struct under this particular game index will be updated to reflect changes in:
 
 - player points
-- next player
+- next player address
 - potential winner
-- last move
+- last bombed squate 
+
+## ERC20 contract
+
+This is a contract that inherits from the base ERC20 implementation.
+
+Several features need to be added to improve existing functionality.
+
+Tests will run against any implementations.
+
+To run the test file, invoke:
+
+You should modify **ONLY** the file `erc20.cairo` in `exercises/contracts/`.
+
+If a feature is complete, run again to see the test output:
+
+Functions that need to be implemented are specified in the `@contract_interface` in `test_erc20.cairo`.
+
+### Features to implement
+
+#### Even transfer
+
+Already implemented `transfer()` is a bit boring so modify such that it only allows for transfers of even amounts of Erc20.
+
+#### Faucet
+
+Users may require some of the test tokens for development.
+
+Implement function `faucet()` that will mint specified amount to the caller.
+
+As tokens are (potentially) valuable, cap the maximum amount to be minted and transfered per invocation to 10,000.
+
+#### Burn haircut
+
+Sometimes tokens need to be burned, but there is no reason not to keep some as the contract deployer.
+
+Implement a funcion `burn()` that will:
+
+- take 10% of the amount to be burned and send it to the address of the deployer/admin
+- burn the rest
+
+#### Exclusive faucet
+
+Implement a faucet that will allow to mint any amount of tokens, but only to an exclusive list.
+
+To do that three functions are needed:
+
+##### `request_whitelist()`
+
+This function will set in the mapping (which needs to be implemented using the `@storage_var` decorator) value of 1 for any address that requests whitelisting.
+
+##### `check_whitelist()`
+
+This function will check whether the provided address has been whitelisted and will return:
+
+- 1 if the caller has been whitelisted
+- 0 if the caller has not been whitelisted
+
+##### `exclusive_faucet()`
+
+This function will accept an amount to be minted, it will then check if the caller has been whitelisted using `check_whitelist()`. If the caller has been whitelisted it will mint any amount that the caller asks for.
+
+## ERC721 contract
+
+This contract imports openzeppelin libraries downlaoded locally and stored in `/lib` directory.
+
+Once more some additional features are to be added.
+
+Tests will run against any implementations.
+
+#### Mint index
+
+Change minting procedure so that rathar than passing an ID, instead it fetches one from a storage variable named `counter()`. After minting current index of `counter()` is changed to be + 1.
+
+#### Origina owner
+
+Implement a look-up table (`og_owner(tokenId: Uint256)`) for who the initial buyer was that persists despite transfers.
+
+#### Burn mint
+
+Add a new minting function `mintBurn()` that will call ERC20 contract from prior exercises and invoke ERC20 `burn()`. NFT price and and address of the allowed ERC20 are to be stored in storage variables `nft_price()` and `erc20_pay()`. An `assert` is to reject anyone that does nto have enough money. Any account, not just admin can mint NFT this way.
 
 # Conversion helper
 
